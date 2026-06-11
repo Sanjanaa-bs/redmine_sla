@@ -1,0 +1,10 @@
+[package]
+name = "models"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+chrono = { workspace = true }
+mongodb = { workspace = true }
+shared = { workspace = true }

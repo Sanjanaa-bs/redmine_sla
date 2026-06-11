@@ -1,15 +1,51 @@
+[workspace]
+members = [
+    "crates/shared",
+    "crates/db_connector",
+    "crates/models",
+    "crates/calendar_engine",
+    "crates/transition_reconstructor",
+    "crates/calculation_engine",
+    "crates/cache_manager",
+    "crates/audit_logger",
+    "crates/event_dispatcher",
+    "crates/api_controller",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+mongodb = "3"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+futures-util = "0.3"
+dotenv = "0.15"
+axum = "0.7"
+shared = { path = "crates/shared" }
+db_connector = { path = "crates/db_connector" }
+models = { path = "crates/models" }
+calendar_engine = { path = "crates/calendar_engine" }
+transition_reconstructor = { path = "crates/transition_reconstructor" }
+calculation_engine = { path = "crates/calculation_engine" }
+cache_manager = { path = "crates/cache_manager" }
+audit_logger = { path = "crates/audit_logger" }
+event_dispatcher = { path = "crates/event_dispatcher" }
+
 [package]
 name = "REDMINE"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.7"
-tokio = { version = "1", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-mongodb = "3"
-dotenv = "0.15"
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4", "serde"] }
-futures-util = "0.3"
+tokio = { workspace = true }
+dotenv = { workspace = true }
+api_controller = { path = "crates/api_controller" }
+db_connector = { workspace = true }
+event_dispatcher = { workspace = true }
+axum = { workspace = true }

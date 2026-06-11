@@ -1,0 +1,17 @@
+[package]
+name = "event_dispatcher"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+chrono = { workspace = true }
+mongodb = { workspace = true }
+shared = { workspace = true }
+models = { workspace = true }
+calendar_engine = { workspace = true }
+transition_reconstructor = { workspace = true }
+calculation_engine = { workspace = true }
+cache_manager = { workspace = true }
+audit_logger = { workspace = true }
+tokio = { workspace = true }

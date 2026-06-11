@@ -1,0 +1,10 @@
+[package]
+name = "db_connector"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+mongodb = { workspace = true }
+tokio = { workspace = true }
+shared = { workspace = true }
+dotenv = { workspace = true }

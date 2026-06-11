@@ -1,0 +1,10 @@
+[package]
+name = "calendar_engine"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+chrono = { workspace = true }
+shared = { workspace = true }
+models = { workspace = true }

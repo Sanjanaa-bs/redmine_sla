@@ -6,15 +6,12 @@ version = 4
 name = "REDMINE"
 version = "0.1.0"
 dependencies = [
+ "api_controller",
  "axum",
- "chrono",
+ "db_connector",
  "dotenv",
- "futures-util",
- "mongodb",
- "serde",
- "serde_json",
+ "event_dispatcher",
  "tokio",
- "uuid",
 ]
 
 [[package]]
@@ -46,6 +43,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
+name = "api_controller"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "cache_manager",
+ "chrono",
+ "event_dispatcher",
+ "models",
+ "mongodb",
+ "serde",
+ "serde_json",
+ "shared",
+ "tokio",
+ "transition_reconstructor",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -61,6 +75,17 @@ name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
+
+[[package]]
+name = "audit_logger"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "models",
+ "mongodb",
+ "serde",
+ "shared",
+]
 
 [[package]]
 name = "autocfg"
@@ -190,6 +215,39 @@ name = "bytes"
 version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
+
+[[package]]
+name = "cache_manager"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "models",
+ "mongodb",
+ "serde",
+ "shared",
+]
+
+[[package]]
+name = "calculation_engine"
+version = "0.1.0"
+dependencies = [
+ "calendar_engine",
+ "chrono",
+ "models",
+ "serde",
+ "shared",
+ "transition_reconstructor",
+]
+
+[[package]]
+name = "calendar_engine"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "models",
+ "serde",
+ "shared",
+]
 
 [[package]]
 name = "cc"
@@ -392,6 +450,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8"
 
 [[package]]
+name = "db_connector"
+version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "mongodb",
+ "shared",
+ "tokio",
+]
+
+[[package]]
 name = "deranged"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -493,6 +561,23 @@ checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "event_dispatcher"
+version = "0.1.0"
+dependencies = [
+ "audit_logger",
+ "cache_manager",
+ "calculation_engine",
+ "calendar_engine",
+ "chrono",
+ "models",
+ "mongodb",
+ "serde",
+ "shared",
+ "tokio",
+ "transition_reconstructor",
 ]
 
 [[package]]
@@ -1178,6 +1263,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "models"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "mongodb",
+ "serde",
+ "shared",
+]
+
+[[package]]
 name = "moka"
 version = "0.12.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1716,6 +1811,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "shlex"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2049,6 +2153,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
 dependencies = [
  "once_cell",
+]
+
+[[package]]
+name = "transition_reconstructor"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "models",
+ "serde",
+ "shared",
 ]
 
 [[package]]
