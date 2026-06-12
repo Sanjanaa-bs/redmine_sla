@@ -1,0 +1,130 @@
+{
+  "sla_workflow": {
+    "data": [
+      {
+        "type": "functions",
+        "name": "get_sla_config",
+        "input": [
+          { "key": "project_id" },
+          { "key": "tracker_id" }
+        ],
+        "output": [
+          { "key": "sla_id" },
+          { "key": "schedule_id" }
+        ],
+        "next_node": [{}],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "get_sla_level",
+        "input": [
+          { "key": "sla_id" },
+          { "key": "priority" }
+        ],
+        "output": [
+          { "key": "sla_level_id" },
+          { "key": "response_time" },
+          { "key": "resolution_time" }
+        ],
+        "next_node": [{}],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "get_schedule",
+        "input": [
+          { "key": "schedule_id" }
+        ],
+        "output": [
+          { "key": "working_days" },
+          { "key": "start_time" },
+          { "key": "end_time" },
+          { "key": "timezone" }
+        ],
+        "next_node": [{}],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "get_holidays",
+        "input": [
+          { "key": "schedule_id" }
+        ],
+        "output": [
+          { "key": "holiday_dates" }
+        ],
+        "next_node": [{}],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "calculate_deadline",
+        "input": [
+          { "key": "created_at" },
+          { "key": "response_time" },
+          { "key": "resolution_time" },
+          { "key": "working_days" },
+          { "key": "start_time" },
+          { "key": "end_time" },
+          { "key": "holiday_dates" }
+        ],
+        "output": [
+          { "key": "response_deadline" },
+          { "key": "resolution_deadline" }
+        ],
+        "next_node": [{}],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "create_sla_cache",
+        "input": [
+          { "key": "issue_id" },
+          { "key": "project_id" },
+          { "key": "sla_level_id" },
+          { "key": "schedule_id" },
+          { "key": "response_deadline" },
+          { "key": "resolution_deadline" }
+        ],
+        "output": [
+          { "key": "cache_id" },
+          { "key": "status" }
+        ],
+        "next_node": [{}],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "check_sla_breach",
+        "input": [
+          { "key": "cache_id" }
+        ],
+        "output": [
+          { "key": "cache_id" },
+          { "key": "response_breached" },
+          { "key": "resolution_breached" },
+          { "key": "status" }
+        ],
+        "next_node": [{}],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "update_sla_status",
+        "input": [
+          { "key": "cache_id" },
+          { "key": "response_breached" },
+          { "key": "resolution_breached" },
+          { "key": "status" }
+        ],
+        "output": [
+          { "key": "updated" },
+          { "key": "final_status" }
+        ],
+        "next_node": [{}],
+        "function_type": "python"
+      }
+    ]
+  }
+}
