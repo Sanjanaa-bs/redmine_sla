@@ -126,5 +126,83 @@
         "function_type": "python"
       }
     ]
+  },
+  "sla_config_workflow": {
+    "data": [
+      {
+        "type": "functions",
+        "name": "create_sla",
+        "input": [
+          { "name": "name" },
+          { "description": "description" }
+        ],
+        "output": [
+          { "sla_id": "sla_id" },
+          { "status": "status" }
+        ],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "create_sla_level",
+        "input": [
+          { "sla_id": "sla_id" },
+          { "name": "name" },
+          { "priority": "priority" },
+          { "response_time": "response_time" },
+          { "resolution_time": "resolution_time" }
+        ],
+        "output": [
+          { "sla_level_id": "sla_level_id" },
+          { "status": "status" }
+        ],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "create_sla_schedule",
+        "input": [
+          { "name": "name" },
+          { "timezone": "timezone" },
+          { "working_days": "working_days" },
+          { "start_time": "start_time" },
+          { "end_time": "end_time" }
+        ],
+        "output": [
+          { "schedule_id": "schedule_id" },
+          { "status": "status" }
+        ],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "create_sla_holiday",
+        "input": [
+          { "name": "name" },
+          { "date": "date" },
+          { "schedule_id": "schedule_id" }
+        ],
+        "output": [
+          { "holiday_id": "holiday_id" },
+          { "status": "status" }
+        ],
+        "function_type": "python"
+      },
+      {
+        "type": "functions",
+        "name": "link_sla_to_project",
+        "input": [
+          { "project_id": "project_id" },
+          { "tracker_id": "tracker_id" },
+          { "sla_id": "sla_id" },
+          { "schedule_id": "schedule_id" }
+        ],
+        "output": [
+          { "tracker_id": "tracker_id" },
+          { "status": "status" }
+        ],
+        "function_type": "python"
+      }
+    ]
   }
 }

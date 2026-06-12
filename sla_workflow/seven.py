@@ -1,6 +1,39 @@
 import json
 import requests
 from datetime import datetime, timedelta, time, timezone
+import os
+from pymongo import MongoClient
+from bson import ObjectId
+
+# Initialize MongoDB client globally
+_mongodb_uri = os.environ.get("MONGODB_URI")
+_database_name = os.environ.get("DATABASE_NAME")
+
+if not _mongodb_uri or not _database_name:
+    try:
+        _env_path = r"c:\Users\sanjana\Downloads\REDMINE\.env"
+        if os.path.exists(_env_path):
+            with open(_env_path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        parts = line.split("=", 1)
+                        if len(parts) == 2:
+                            key, val = parts[0].strip(), parts[1].strip()
+                            if key == "MONGODB_URI":
+                                _mongodb_uri = val
+                            elif key == "DATABASE_NAME":
+                                _database_name = val
+    except Exception:
+        pass
+
+if not _mongodb_uri:
+    _mongodb_uri = "mongodb://localhost:27017"
+if not _database_name:
+    _database_name = "redmine_sla"
+
+client = MongoClient(_mongodb_uri)
+db = client[_database_name]
 
 def parse_aware_datetime(args):
     dt_str = args[0]
@@ -100,6 +133,106 @@ def add_working_minutes(args):
             current_dt = today_end
 
     return {"result": current_dt}
+
+
+def create_sla(args):
+    name = args[0]
+    description = args[1]
+    now_str = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "name": name,
+        "description": description,
+        "created_at": now_str,
+        "updated_at": now_str
+    }
+    result = db.slas.insert_one(doc)
+    return {
+        "sla_id": str(result.inserted_id),
+        "status": "created"
+    }
+
+
+def create_sla_level(args):
+    sla_id = args[0]
+    name = args[1]
+    priority = args[2]
+    response_time = args[3]
+    resolution_time = args[4]
+    doc = {
+        "sla_id": sla_id,
+        "name": name,
+        "priority": priority,
+        "response_time": response_time,
+        "resolution_time": resolution_time
+    }
+    result = db.sla_levels.insert_one(doc)
+    return {
+        "sla_level_id": str(result.inserted_id),
+        "status": "created"
+    }
+
+
+def create_sla_schedule(args):
+    name = args[0]
+    tz_val = args[1]
+    working_days = args[2]
+    start_time = args[3]
+    end_time = args[4]
+    doc = {
+        "name": name,
+        "timezone": tz_val,
+        "working_days": working_days,
+        "start_time": start_time,
+        "end_time": end_time
+    }
+    result = db.sla_schedules.insert_one(doc)
+    return {
+        "schedule_id": str(result.inserted_id),
+        "status": "created"
+    }
+
+
+def create_sla_holiday(args):
+    name = args[0]
+    date = args[1]
+    schedule_id = args[2]
+    now_str = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "name": name,
+        "date": date,
+        "schedule_id": schedule_id,
+        "created_at": now_str
+    }
+    result = db.sla_holidays.insert_one(doc)
+    return {
+        "holiday_id": str(result.inserted_id),
+        "status": "created"
+    }
+
+
+def link_sla_to_project(args):
+    project_id = args[0]
+    tracker_id = args[1]
+    sla_id = args[2]
+    schedule_id = args[3]
+    now_str = datetime.now(timezone.utc).isoformat()
+    
+    filter_doc = { "project_id": project_id, "tracker_id": tracker_id }
+    update_doc = {
+        "$set": {
+            "project_id": project_id,
+            "tracker_id": tracker_id,
+            "sla_id": sla_id,
+            "schedule_id": schedule_id,
+            "updated_at": now_str
+        }
+    }
+    db.sla_project_trackers.update_one(filter_doc, update_doc, upsert=True)
+    return {
+        "tracker_id": tracker_id,
+        "status": "linked"
+    }
+
 
 def get_sla_config(args):
     project_id, tracker_id = args[0], args[1]

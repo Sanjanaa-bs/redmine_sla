@@ -9,9 +9,9 @@ def show(label, value):
     print("-" * 50)
     print(json.dumps(value, indent=2))
 
-def call_step(step_num, function_name, args):
+def call_step(step_num, function_name, args, workflow_name="sla_workflow"):
     payload = {
-        "workflow_name": "sla_workflow",
+        "workflow_name": workflow_name,
         "path": PATH,
         "function": function_name,
         "args": args
@@ -21,6 +21,8 @@ def call_step(step_num, function_name, args):
         json=payload,
         timeout=60
     )
+    if response.status_code != 200:
+        print(f"Error calling {function_name}: Status {response.status_code}, Body: {response.text}")
     response.raise_for_status()
     res_data = response.json()
     show(f"Step {step_num}: {function_name}", res_data)
@@ -42,6 +44,32 @@ def main():
     created_at = "2026-06-12T09:00:00"
 
     try:
+        # WORKFLOW 1 - CONFIGURE SLA
+        # Step 1 - create_sla
+        res_sla = call_step("1-1", "create_sla", ["Standard SLA", "Default SLA for all projects"], workflow_name="sla_config_workflow")
+        sla_id = res_sla.get("sla_id")
+
+        # Step 2 - create_sla_level
+        res_level = call_step("1-2", "create_sla_level", [sla_id, "Gold", "high", 240, 1440], workflow_name="sla_config_workflow")
+        sla_level_id = res_level.get("sla_level_id")
+
+        # Step 3 - create_sla_schedule
+        res_sched = call_step("1-3", "create_sla_schedule", [
+            "India Business Hours", "Asia/Kolkata", 
+            ["monday","tuesday","wednesday","thursday","friday"],
+            "09:00", "18:00"
+        ], workflow_name="sla_config_workflow")
+        schedule_id = res_sched.get("schedule_id")
+
+        # Step 4 - create_sla_holiday
+        res_hol = call_step("1-4", "create_sla_holiday", ["Diwali", "2026-10-20", schedule_id], workflow_name="sla_config_workflow")
+        holiday_id = res_hol.get("holiday_id")
+
+        # Step 5 - link_sla_to_project
+        call_step("1-5", "link_sla_to_project", [5, 1, sla_id, schedule_id], workflow_name="sla_config_workflow")
+
+        print("Flow 1 Complete - SLA Rules Configured!")
+
         # Step 1: get_sla_config
         res1 = call_step(1, "get_sla_config", [project_id, tracker_id])
         sla_id = res1.get("sla_id")
