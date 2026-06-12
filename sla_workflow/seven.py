@@ -2,23 +2,104 @@ import json
 import requests
 from datetime import datetime, timedelta, time, timezone
 
-def parse_aware_datetime(dt_str):
+def parse_aware_datetime(args):
+    dt_str = args[0]
     if not dt_str:
-        return None
+        return {"result": None}
     if dt_str.endswith('Z'):
         dt_str = dt_str[:-1] + '+00:00'
     dt = datetime.fromisoformat(dt_str)
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt
+    return {"result": dt}
 
-def format_datetime(dt):
+def format_datetime(args):
+    dt = args[0]
     if dt is None:
-        return None
+        return {"result": None}
     s = dt.isoformat()
     if s.endswith("+00:00"):
         s = s[:-6] + "Z"
-    return s
+    return {"result": s}
+
+def is_working_day(args):
+    dt, working_days_set, holidays_set = args[0], args[1], args[2]
+    day_name = dt.strftime("%A").lower()
+    if day_name not in working_days_set:
+        return {"result": False}
+    date_str = dt.strftime("%Y-%m-%d")
+    if date_str in holidays_set:
+        return {"result": False}
+    return {"result": True}
+
+def get_work_start_time(args):
+    dt, work_start = args[0], args[1]
+    res = dt.replace(hour=work_start.hour, minute=work_start.minute, second=0, microsecond=0)
+    return {"result": res}
+
+def get_work_end_time(args):
+    dt, work_end = args[0], args[1]
+    res = dt.replace(hour=work_end.hour, minute=work_end.minute, second=0, microsecond=0)
+    return {"result": res}
+
+def get_next_working_day_start(args):
+    dt, work_start = args[0], args[1]
+    next_dt = dt + timedelta(days=1)
+    res = next_dt.replace(hour=work_start.hour, minute=work_start.minute, second=0, microsecond=0)
+    return {"result": res}
+
+def add_working_minutes(args):
+    base_dt, minutes, working_days_set, work_start, work_end, holidays_set = args[0], args[1], args[2], args[3], args[4], args[5]
+    if minutes is None:
+        return {"result": None}
+    minutes = int(minutes)
+    if minutes <= 0:
+        return {"result": base_dt}
+    
+    current_dt = base_dt
+    remaining_minutes = minutes
+    limit_days = 365
+    day_counter = 0
+
+    while remaining_minutes > 0:
+        is_work = is_working_day([current_dt, working_days_set, holidays_set])["result"]
+        
+        if not is_work:
+            current_dt = get_next_working_day_start([current_dt, work_start])["result"]
+            day_counter += 1
+            if day_counter > limit_days:
+                return {"result": None}
+            continue
+
+        t = current_dt.time()
+        if t < work_start:
+            current_dt = get_work_start_time([current_dt, work_start])["result"]
+            continue
+        elif t >= work_end:
+            current_dt = get_next_working_day_start([current_dt, work_start])["result"]
+            day_counter += 1
+            if day_counter > limit_days:
+                return {"result": None}
+            continue
+
+        today_end = get_work_end_time([current_dt, work_end])["result"]
+        minutes_left_today = int((today_end - current_dt).total_seconds() / 60)
+        
+        if minutes_left_today <= 0:
+            current_dt = get_next_working_day_start([current_dt, work_start])["result"]
+            day_counter += 1
+            if day_counter > limit_days:
+                return {"result": None}
+            continue
+        
+        if remaining_minutes <= minutes_left_today:
+            current_dt = current_dt + timedelta(minutes=remaining_minutes)
+            remaining_minutes = 0
+        else:
+            remaining_minutes -= minutes_left_today
+            current_dt = today_end
+
+    return {"result": current_dt}
 
 def get_sla_config(args):
     project_id, tracker_id = args[0], args[1]
@@ -107,7 +188,7 @@ def calculate_deadline(args):
     end_time = args[5]
     holiday_dates = args[6] or []
 
-    start_dt = parse_aware_datetime(created_at)
+    start_dt = parse_aware_datetime([created_at])["result"]
 
     working_days_set = {wd.lower() for wd in working_days}
 
@@ -123,77 +204,15 @@ def calculate_deadline(args):
     work_start = time(sh, sm)
     work_end = time(eh, em)
 
-    def add_working_minutes(base_dt, minutes):
-        if minutes is None:
-            return None
-        minutes = int(minutes)
-        if minutes <= 0:
-            return base_dt
-        
-        current_dt = base_dt
-        remaining_minutes = minutes
-        limit_days = 365
-        day_counter = 0
+    resp_res = add_working_minutes([start_dt, response_time, working_days_set, work_start, work_end, holidays_set])
+    resp_deadline_dt = resp_res["result"]
 
-        def is_work_day(dt):
-            day_name = dt.strftime("%A").lower()
-            if day_name not in working_days_set:
-                return False
-            date_str = dt.strftime("%Y-%m-%d")
-            if date_str in holidays_set:
-                return False
-            return True
-
-        def is_working_time(dt):
-            if not is_work_day(dt):
-                return False
-            t = dt.time()
-            return work_start <= t < work_end
-
-        while remaining_minutes > 0:
-            if not is_working_time(current_dt):
-                t = current_dt.time()
-                if is_work_day(current_dt):
-                    if t < work_start:
-                        current_dt = current_dt.replace(hour=work_start.hour, minute=work_start.minute, second=0, microsecond=0)
-                        continue
-                    elif t >= work_end:
-                        current_dt = current_dt + timedelta(days=1)
-                        current_dt = current_dt.replace(hour=work_start.hour, minute=work_start.minute, second=0, microsecond=0)
-                        day_counter += 1
-                        if day_counter > limit_days:
-                            return None
-                        continue
-                current_dt = current_dt + timedelta(days=1)
-                current_dt = current_dt.replace(hour=work_start.hour, minute=work_start.minute, second=0, microsecond=0)
-                day_counter += 1
-                if day_counter > limit_days:
-                    return None
-                continue
-
-            today_end = current_dt.replace(hour=work_end.hour, minute=work_end.minute, second=0, microsecond=0)
-            minutes_left_today = int((today_end - current_dt).total_seconds() / 60)
-            
-            if minutes_left_today <= 0:
-                current_dt = current_dt + timedelta(days=1)
-                current_dt = current_dt.replace(hour=work_start.hour, minute=work_start.minute, second=0, microsecond=0)
-                continue
-            
-            if remaining_minutes <= minutes_left_today:
-                current_dt = current_dt + timedelta(minutes=remaining_minutes)
-                remaining_minutes = 0
-            else:
-                remaining_minutes -= minutes_left_today
-                current_dt = today_end
-        
-        return current_dt
-
-    resp_deadline_dt = add_working_minutes(start_dt, response_time)
-    res_deadline_dt = add_working_minutes(start_dt, resolution_time)
+    res_res = add_working_minutes([start_dt, resolution_time, working_days_set, work_start, work_end, holidays_set])
+    res_deadline_dt = res_res["result"]
 
     return {
-        "response_deadline": format_datetime(resp_deadline_dt),
-        "resolution_deadline": format_datetime(res_deadline_dt)
+        "response_deadline": format_datetime([resp_deadline_dt])["result"],
+        "resolution_deadline": format_datetime([res_deadline_dt])["result"]
     }
 
 def create_sla_cache(args):
@@ -204,7 +223,7 @@ def create_sla_cache(args):
     response_deadline = args[4]
     resolution_deadline = args[5]
 
-    now_str = format_datetime(datetime.now(timezone.utc))
+    now_str = format_datetime([datetime.now(timezone.utc)])["result"]
     payload = {
         "issue_id": issue_id,
         "project_id": project_id,
@@ -243,13 +262,13 @@ def check_sla_breach(args):
 
     response_breached = False
     if response_deadline_str and not response_met:
-        resp_dl = parse_aware_datetime(response_deadline_str)
+        resp_dl = parse_aware_datetime([response_deadline_str])["result"]
         if now > resp_dl:
             response_breached = True
 
     resolution_breached = False
     if resolution_deadline_str and not resolution_met:
-        res_dl = parse_aware_datetime(resolution_deadline_str)
+        res_dl = parse_aware_datetime([resolution_deadline_str])["result"]
         if now > res_dl:
             resolution_breached = True
 
